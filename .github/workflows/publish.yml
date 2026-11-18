@@ -3,9 +3,15 @@
 #
 #   gh workflow run publish.yml --ref main
 #
-# The Marketplace policy for the PlatformOnline publisher must name this repo,
-# this file (publish.yml) and the `marketplace` environment.
-# See docs/RELEASE-TODO.md.
+# One-time setup:
+# - Marketplace (marketplace.visualstudio.com/manage > PlatformOnline >
+#   Trusted Publishing): owner PlatformOnline, repository MyStatus,
+#   workflow publish.yml, environment marketplace.
+# - GitHub environment `marketplace`, deployment branches limited to main.
+#
+# Before each release, raise the version in package.json and CHANGELOG.md.
+# If OIDC publishing fails, upload the `vsix` artifact by hand on the
+# Marketplace manage page, then tag: git tag v<version> origin/main && git push origin v<version>.
 
 name: Publish to Marketplace
 
