@@ -60,16 +60,29 @@ export class Auth implements vscode.Disposable {
     this.set(undefined);
   }
 
-  /** Called when the API rejects the token, e.g. after it was revoked on github.com. */
-  async handleUnauthorized(): Promise<void> {
+  /**
+   * Called when the API rejects `token`, e.g. after it was revoked on github.com.
+   * Several parallel requests can fail with the same token; only the first one
+   * that still matches the active session signs out and prompts.
+   */
+  async handleUnauthorized(token: string): Promise<void> {
+    if (!this.session || this.session.accessToken !== token) {
+      return;
+    }
     this.set(undefined);
     const choice = await vscode.window.showWarningMessage(
       'MyStatus: your GitHub session is no longer valid.',
       'Sign in again',
     );
-    if (choice) {
+    if (!choice) {
+      return;
+    }
+    try {
       const s = await vscode.authentication.getSession(PROVIDER_ID, SCOPES, { forceNewSession: true });
       this.set(s);
+    } catch (e) {
+      // The user cancelled the sign-in flow, or it failed.
+      void vscode.window.showErrorMessage(`GitHub sign-in failed: ${e instanceof Error ? e.message : e}`);
     }
   }
 

@@ -9,3 +9,8 @@ tsconfig.json
 .vscode-test.mjs
 **/*.map
 **/*.ts
+renovate.json
+resources/icon.svg
+.github/**
+.DS_Store
+*.vsix
