@@ -35,10 +35,20 @@ npm run compile
 
 ### 1. Publisher oluşturma (yalnızca siz yapabilirsiniz)
 - [x] https://marketplace.visualstudio.com/manage adresinde bir publisher oluşturun ya da var olanı seçin. Publisher ID: **`PlatformOnline`**
-- [ ] https://dev.azure.com adresinde bir **Personal Access Token (PAT)** oluşturun:
-  - Organization: **All accessible organizations**
-  - Scope: **Marketplace → Manage**
-  - Token'ı kimseyle paylaşmayın; sohbete ya da repoya yazmayın.
+- [ ] **Trusted Publishing kuralı oluşturun (PAT gerekmez).** https://marketplace.visualstudio.com/manage adresinde `PlatformOnline` publisher'ını açın, **Trusted Publishing → Create**'e tıklayın ve alanları şöyle doldurun:
+
+  | Alan | Değer |
+  |---|---|
+  | Policy name | `Release workflow` |
+  | Repository owner | `PlatformOnline` |
+  | Repository | `MyStatus` |
+  | Workflow | `publish.yml` |
+  | Environment | `marketplace` |
+
+  Değerler birebir aynı olmalı. Workflow alanına yalnızca dosya adı yazılır, `.github/workflows/` yolu yazılmaz.
+- [ ] GitHub'da `marketplace` ortamını (environment) oluşturun: **Settings → Environments → New environment**. Ayarlar:
+  - **Deployment branches:** yalnızca `main`.
+  - İsteğe bağlı: **Required reviewers** olarak kendinizi ekleyin. Böylece her yayın sizin onayınızı bekler.
 
 ### 2. Kodda kalan değişiklikler
 - [x] `package.json` → `"publisher": "PlatformOnline"`
@@ -56,21 +66,32 @@ npm run compile
 - [ ] Test edin: `npx vsce package` → oluşan `.vsix` dosyasını VS Code'da **Extensions → … → Install from VSIX** ile kurup deneyin.
 - [ ] `test` → `main` PR'ı açın ve **merge** ile birleştirin (admin).
 
-### 4. Yayınlama (`main` üzerinden)
-```bash
-git switch main && git pull
-npx vsce login PlatformOnline    # PAT'i burada siz girersiniz
-npx vsce publish
-```
-- [ ] Sürüm etiketini atın. **`v*` etiketleri bir kez atıldıktan sonra değiştirilemez ve silinemez**, bu yüzden yayın başarılı olduktan sonra atın:
+### 4. Yayınlama (`main` üzerinden, GitHub Actions ile)
+- [ ] **Publish to Marketplace** iş akışını `main` üzerinde elle başlatın. **Actions → Publish to Marketplace → Run workflow** yolunu kullanın ya da terminalden şunu çalıştırın:
   ```bash
-  git tag v0.1.0 && git push origin v0.1.0
+  gh workflow run publish.yml --ref main
   ```
+  İş akışı şu adımları sırayla yapar:
+  1. `package.json`'daki sürüm için `v*` etiketi zaten varsa durur.
+  2. Tip kontrolü, testler ve `vsce package` adımlarını çalıştırır.
+  3. Test edilen `.vsix` dosyasını `vsce publish --oidc` ile yayınlar.
+  4. Yayın başarılı olunca `v<sürüm>` etiketini ve `.vsix` dosyasını içeren bir GitHub Release oluşturur. **`v*` etiketleri bir kez atıldıktan sonra değiştirilemez ve silinemez**; bu yüzden etiket yalnızca yayından sonra atılır.
 - [ ] Marketplace sayfasını kontrol edin: ikon, README, bağlantılar, kurulum.
+
+**Yedek yol: elle yükleme.** Trusted Publishing ilk sürümde çalışmazsa şunu yapın:
+1. İş akışının oluşturduğu `vsix` artifact'ını indirin ya da yerelde `npx vsce package` çalıştırın.
+2. Dosyayı https://marketplace.visualstudio.com/manage adresinde `PlatformOnline` → **New extension → Visual Studio Code** ile yükleyin.
+3. Ardından etiketi elle atın:
+   ```bash
+   git tag v0.1.0 origin/main && git push origin v0.1.0
+   ```
+
+Sonraki sürümler için `package.json` ve `CHANGELOG.md`'de sürümü yükseltin, değişiklikleri `main`'e taşıyın ve iş akışını tekrar çalıştırın.
 
 ## Bilinmesi gerekenler
 - **`main` ve `test`:** Doğrudan push edilemez. PR açılmalı ve **admin bypass** ile birleştirilmeli.
 - **`development`:** PR zorunlu, squash ile birleştirilir, admin gerekmez.
 - **Renovate:** Bağımlılık PR'larını `development`'a açar. `@types/vscode` güncellemeleri kapalı; bu paket `engines.vscode` (^1.95.0) sürümünden yeni olamaz, yoksa `vsce package` hata verir. `@types/node` için ana sürüm güncellemeleri de kapalı.
-- **TypeScript 7:** Renovate'in TypeScript 7 PR'ı `tsconfig.json`'a `"types": ["node", "mocha"]` eklenmeden geçmez. TS 7 `@types` paketlerini artık otomatik dahil etmiyor. Bu ayar TS 5.9'da da çalışıyor.
+- **PAT kullanılmıyor:** Azure DevOps'taki global PAT'ler 1 Aralık 2026'da kaldırılıyor. Bu yüzden yayın, saklanan bir token yerine GitHub OIDC ile yapılıyor; repoda saklanan bir secret yok. Marketplace'in verdiği kimlik bilgisi 15 dakika geçerli ve yalnızca bu iş akışı ile `marketplace` ortamı için çalışıyor.
+- **TypeScript 7:** Proje TypeScript 7 kullanıyor. TS 7 `@types` paketlerini artık otomatik dahil etmediği için `tsconfig.json`'daki `"types": ["node", "mocha"]` satırı gerekli.
 - **Bağımlılık `overrides`'ı:** `package.json`'daki `overrides` (mocha, glob, minimatch), `@vscode/test-cli`'nin kilitlediği eski ve açık içeren sürümleri zorla günceller. test-cli yeni bağımlılıklarla sürüm çıkarınca bu satırlar gözden geçirilmeli. Hepsi geliştirme bağımlılığı; hiçbiri `.vsix` paketine girmiyor.
