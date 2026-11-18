@@ -7,8 +7,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-account/mystatus.git"
+    "url": "https://github.com/PlatformOnline/MyStatus.git"
   },
+  "bugs": {
+    "url": "https://github.com/PlatformOnline/MyStatus/issues"
+  },
+  "homepage": "https://github.com/PlatformOnline/MyStatus#readme",
   "engines": {
     "vscode": "^1.95.0"
   },
