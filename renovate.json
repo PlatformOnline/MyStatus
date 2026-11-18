@@ -1,0 +1,17 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "baseBranchPatterns": ["development"],
+  "packageRules": [
+    {
+      "description": "@types/vscode must not be newer than engines.vscode (vsce refuses to package otherwise). Bump both together by hand when raising the minimum VS Code version.",
+      "matchPackageNames": ["@types/vscode"],
+      "enabled": false
+    },
+    {
+      "description": "@types/node should match the Node.js version bundled with the minimum supported VS Code (1.95 ships Node 20). Allow minor/patch only.",
+      "matchPackageNames": ["@types/node"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    }
+  ]
+}
