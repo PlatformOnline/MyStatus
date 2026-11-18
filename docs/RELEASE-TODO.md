@@ -8,18 +8,19 @@
 |---|---|
 | Repo | https://github.com/PlatformOnline/MyStatus (public, varsayılan branch: `development`) |
 | Branch akışı | `feature/*`, `chore/*` → `development` (squash) → `test` (merge) → `main` (merge) → yayın + `v*` etiketi |
-| Açık PR | **#8** `chore/marketplace-prep` → `development`: README, CHANGELOG, LICENSE, ikon, sürüm 0.1.0 |
-| Sürüm | `0.1.0` (package.json) |
+| Sürüm | `0.1.0` (package.json), publisher `PlatformOnline` |
 | Paket testi | `vsce package` uyarısız çalışıyor: 9 dosya, 124 KB |
+| Güvenlik | `npm audit`: 0 uyarı; açık Dependabot uyarısı yok |
 
-`development`'ta olup `main`'de olmayanlar: Renovate ayarı (#5), vsce v4 (#7) ve birleştirilince #8.
+Marketplace hazırlığının tamamı `development`'ta: README, CHANGELOG, LICENSE, ikon, publisher, oturum hatası düzeltmesi ve bağımlılık `overrides`'ı. `test` ve `main` henüz eski hallerinde, `development`'ın 5 commit gerisinde.
+
+> Repo 18 Kasım 2026'da yeniden oluşturuldu. PR numaraları baştan başladı; eski commit mesajlarındaki `(#2)`–`(#11)` numaraları artık var olan PR'ları göstermez.
 
 ## Evde ortamı kurma
 
 ```bash
 git clone https://github.com/PlatformOnline/MyStatus.git
 cd MyStatus
-git switch chore/marketplace-prep    # PR #8 henüz birleştirilmediyse
 npm ci
 npm run compile
 ```
@@ -28,6 +29,7 @@ npm run compile
 - Repo public; herkes klonlayabilir. Push ve birleştirme yetkisi **`yasinersever`** hesabında.
 - Denemek için VS Code'da **F5**'e basın. Test penceresi yalnızca bu extension ile açılır (`--disable-extensions`).
 - Testler: `npm test`
+- Commit atmadan önce `git config user.email` değerinin kişisel adresiniz olduğunu kontrol edin.
 
 ## Yapılacaklar
 
@@ -49,8 +51,7 @@ npm run compile
 - [ ] İsteğe bağlı: `displayName` ("MyStatus – GitHub Followers & Status") ve `LICENSE`'taki telif sahibi ("PlatformOnline") doğru mu, kontrol edin.
 
 ### 3. Birleştirme ve sürümleri ilerletme
-- [ ] Değişiklikleri `chore/marketplace-prep` branch'ine push edin. Bunlar PR #8'e eklenir.
-- [ ] PR #8'i `development`'a **squash** ile birleştirin.
+- [x] Marketplace hazırlığını `development`'a **squash** ile birleştirin.
 - [ ] `development` → `test` PR'ı açın ve **merge** ile birleştirin. Admin yetkisi gerekir: `gh pr merge <no> --merge --admin`
 - [ ] Test edin: `npx vsce package` → oluşan `.vsix` dosyasını VS Code'da **Extensions → … → Install from VSIX** ile kurup deneyin.
 - [ ] `test` → `main` PR'ı açın ve **merge** ile birleştirin (admin).
@@ -71,4 +72,5 @@ npx vsce publish
 - **`main` ve `test`:** Doğrudan push edilemez. PR açılmalı ve **admin bypass** ile birleştirilmeli.
 - **`development`:** PR zorunlu, squash ile birleştirilir, admin gerekmez.
 - **Renovate:** Bağımlılık PR'larını `development`'a açar. `@types/vscode` güncellemeleri kapalı; bu paket `engines.vscode` (^1.95.0) sürümünden yeni olamaz, yoksa `vsce package` hata verir. `@types/node` için ana sürüm güncellemeleri de kapalı.
-- **Güvenlik uyarıları:** `npm audit`'te görünen uyarıların hepsi geliştirme bağımlılıklarında. Hiçbiri `.vsix` paketine girmiyor.
+- **TypeScript 7:** Renovate'in TypeScript 7 PR'ı `tsconfig.json`'a `"types": ["node", "mocha"]` eklenmeden geçmez. TS 7 `@types` paketlerini artık otomatik dahil etmiyor. Bu ayar TS 5.9'da da çalışıyor.
+- **Bağımlılık `overrides`'ı:** `package.json`'daki `overrides` (mocha, glob, minimatch), `@vscode/test-cli`'nin kilitlediği eski ve açık içeren sürümleri zorla günceller. test-cli yeni bağımlılıklarla sürüm çıkarınca bu satırlar gözden geçirilmeli. Hepsi geliştirme bağımlılığı; hiçbiri `.vsix` paketine girmiyor.
