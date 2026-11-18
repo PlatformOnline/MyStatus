@@ -14,4 +14,3 @@ resources/icon.svg
 .github/**
 .DS_Store
 *.vsix
-docs/**
