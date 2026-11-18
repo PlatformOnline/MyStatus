@@ -1,0 +1,96 @@
+# Publishes the extension to the VS Code Marketplace without a PAT, using
+# Marketplace Trusted Publishing (GitHub OIDC). Run it by hand from `main`:
+#
+#   gh workflow run publish.yml --ref main
+#
+# The Marketplace policy for the PlatformOnline publisher must name this repo,
+# this file (publish.yml) and the `marketplace` environment.
+# See docs/RELEASE-TODO.md.
+
+name: Publish to Marketplace
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Test and package
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Check that this version is not released yet
+        id: version
+        run: |
+          version=$(node -p "require('./package.json').version")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if git ls-remote --exit-code --tags origin "refs/tags/v$version" > /dev/null; then
+            echo "::error::Tag v$version already exists. Raise the version in package.json first."
+            exit 1
+          fi
+
+      - run: npm run check-types
+
+      # The tests run inside a real VS Code instance, which needs a display.
+      - run: xvfb-run -a npm test
+
+      - run: npx vsce package --out mystatus.vsix
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: vsix
+          path: mystatus.vsix
+          if-no-files-found: error
+
+  publish:
+    name: Publish and tag
+    needs: build
+    runs-on: ubuntu-latest
+    environment: marketplace
+    permissions:
+      contents: write # create the v* tag and the GitHub release
+      id-token: write # Marketplace Trusted Publishing (OIDC)
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: vsix
+
+      # Publishes exactly the package that was tested in the build job.
+      - run: npx vsce publish --oidc --packagePath mystatus.vsix
+
+      # Tags are immutable (tags-immutable ruleset), so tag only after a successful publish.
+      - name: Create tag and GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          gh release create "v$VERSION" mystatus.vsix \
+            --target "$GITHUB_SHA" \
+            --title "v$VERSION" \
+            --notes "See [CHANGELOG.md](https://github.com/${GITHUB_REPOSITORY}/blob/v$VERSION/CHANGELOG.md)."
