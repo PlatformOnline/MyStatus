@@ -1,0 +1,278 @@
+{
+  "name": "mystatus",
+  "displayName": "MyStatus – GitHub Followers & Status",
+  "description": "See the GitHub status of your followers and the people you follow, and set your own status without leaving VS Code.",
+  "version": "0.0.1",
+  "publisher": "your-publisher-id",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-account/mystatus.git"
+  },
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "github",
+    "status",
+    "followers",
+    "following",
+    "busy"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "mystatus",
+          "title": "MyStatus",
+          "icon": "resources/activity.svg"
+        }
+      ]
+    },
+    "views": {
+      "mystatus": [
+        {
+          "id": "mystatus.me",
+          "name": "Profile"
+        },
+        {
+          "id": "mystatus.followers",
+          "name": "Followers"
+        },
+        {
+          "id": "mystatus.following",
+          "name": "Following"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "mystatus.me",
+        "contents": "Sign in with GitHub to see your followers' statuses and set your own.\n[Sign in with GitHub](command:mystatus.signIn)",
+        "when": "!mystatus.signedIn"
+      },
+      {
+        "view": "mystatus.followers",
+        "contents": "Sign in to list your followers.",
+        "when": "!mystatus.signedIn"
+      },
+      {
+        "view": "mystatus.following",
+        "contents": "Sign in to list the people you follow.",
+        "when": "!mystatus.signedIn"
+      }
+    ],
+    "commands": [
+      {
+        "command": "mystatus.signIn",
+        "title": "Sign in with GitHub",
+        "category": "MyStatus",
+        "icon": "$(sign-in)"
+      },
+      {
+        "command": "mystatus.signOut",
+        "title": "Sign Out",
+        "category": "MyStatus",
+        "icon": "$(sign-out)"
+      },
+      {
+        "command": "mystatus.refresh",
+        "title": "Refresh",
+        "category": "MyStatus",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "mystatus.setStatus",
+        "title": "Set Status",
+        "category": "MyStatus",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "mystatus.clearStatus",
+        "title": "Clear Status",
+        "category": "MyStatus",
+        "icon": "$(clear-all)"
+      },
+      {
+        "command": "mystatus.openProfile",
+        "title": "Open Profile on GitHub",
+        "category": "MyStatus",
+        "icon": "$(link-external)"
+      },
+      {
+        "command": "mystatus.copyLogin",
+        "title": "Copy Username",
+        "category": "MyStatus",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "mystatus.clearHistory",
+        "title": "Clear Status History",
+        "category": "MyStatus",
+        "icon": "$(trash)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "mystatus.setStatus",
+          "when": "view == mystatus.me && mystatus.signedIn",
+          "group": "navigation@1"
+        },
+        {
+          "command": "mystatus.clearStatus",
+          "when": "view == mystatus.me && mystatus.signedIn && mystatus.hasStatus",
+          "group": "navigation@2"
+        },
+        {
+          "command": "mystatus.refresh",
+          "when": "view =~ /^mystatus\\./ && mystatus.signedIn",
+          "group": "navigation@9"
+        },
+        {
+          "command": "mystatus.signOut",
+          "when": "view == mystatus.me && mystatus.signedIn",
+          "group": "z_account"
+        },
+        {
+          "command": "mystatus.clearHistory",
+          "when": "view == mystatus.me && mystatus.signedIn",
+          "group": "z_account"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "mystatus.openProfile",
+          "when": "viewItem == mystatus.user",
+          "group": "inline"
+        },
+        {
+          "command": "mystatus.openProfile",
+          "when": "viewItem == mystatus.user",
+          "group": "1_open"
+        },
+        {
+          "command": "mystatus.copyLogin",
+          "when": "viewItem == mystatus.user",
+          "group": "2_copy"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "mystatus.openProfile",
+          "when": "false"
+        },
+        {
+          "command": "mystatus.copyLogin",
+          "when": "false"
+        },
+        {
+          "command": "mystatus.signIn",
+          "when": "!mystatus.signedIn"
+        },
+        {
+          "command": "mystatus.signOut",
+          "when": "mystatus.signedIn"
+        },
+        {
+          "command": "mystatus.setStatus",
+          "when": "mystatus.signedIn"
+        },
+        {
+          "command": "mystatus.clearStatus",
+          "when": "mystatus.signedIn"
+        },
+        {
+          "command": "mystatus.refresh",
+          "when": "mystatus.signedIn"
+        },
+        {
+          "command": "mystatus.clearHistory",
+          "when": "mystatus.signedIn"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "MyStatus",
+      "properties": {
+        "myStatus.refreshInterval": {
+          "type": "number",
+          "default": 5,
+          "minimum": 0,
+          "markdownDescription": "Auto-refresh interval in minutes. Set to `0` to disable."
+        },
+        "myStatus.maxUsers": {
+          "type": "number",
+          "default": 5000,
+          "minimum": 100,
+          "maximum": 5000,
+          "markdownDescription": "Maximum number of users to load for each of **Followers** and **Following** (100–5000). Each 100 users costs one GitHub API request. The view title shows the real total when the list is cut short, e.g. `1,000 / 12,430`."
+        },
+        "myStatus.sortBy": {
+          "type": "string",
+          "enum": [
+            "status",
+            "name"
+          ],
+          "enumDescriptions": [
+            "Users with a status first, busy users on top",
+            "Alphabetical by full name (or username when no name is set)"
+          ],
+          "default": "status",
+          "description": "How to sort followers and following."
+        },
+        "myStatus.hideUsersWithoutStatus": {
+          "type": "boolean",
+          "default": false,
+          "description": "Hide users who have no status set."
+        },
+        "myStatus.showStatusBarItem": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show your own GitHub status in the status bar."
+        },
+        "myStatus.highlightBusyInStatusBar": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Use a warning background color for the status bar item while your status is marked as **Busy**."
+        },
+        "myStatus.historySize": {
+          "type": "number",
+          "default": 10,
+          "minimum": 0,
+          "maximum": 50,
+          "markdownDescription": "How many recently used statuses to remember and offer in **Set Status**. Set to `0` to disable history."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "npm run check-types && node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "package": "npm run check-types && node esbuild.js --production",
+    "check-types": "tsc --noEmit",
+    "compile-tests": "tsc -p . --outDir out",
+    "pretest": "npm run compile-tests && npm run compile",
+    "test": "vscode-test",
+    "vsce:package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^20.17.0",
+    "@types/vscode": "~1.95.0",
+    "@vscode/test-cli": "^0.0.15",
+    "@vscode/test-electron": "^3.1.0",
+    "@vscode/vsce": "^3.6.0",
+    "esbuild": "^0.25.0",
+    "gemoji": "^8.1.0",
+    "typescript": "^5.8.0"
+  }
+}
