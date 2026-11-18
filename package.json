@@ -2,9 +2,15 @@
   "name": "mystatus",
   "displayName": "MyStatus – GitHub Followers & Status",
   "description": "See the GitHub status of your followers and the people you follow, and set your own status without leaving VS Code.",
-  "version": "0.0.1",
-  "publisher": "your-publisher-id",
+  "version": "0.1.0",
+  "publisher": "PlatformOnline",
   "license": "MIT",
+  "icon": "resources/icon.png",
+  "galleryBanner": {
+    "color": "#5B5FE6",
+    "theme": "dark"
+  },
+  "pricing": "Free",
   "repository": {
     "type": "git",
     "url": "https://github.com/PlatformOnline/MyStatus.git"
@@ -15,6 +21,12 @@
   "homepage": "https://github.com/PlatformOnline/MyStatus#readme",
   "engines": {
     "vscode": "^1.95.0"
+  },
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": true
+    },
+    "virtualWorkspaces": true
   },
   "categories": [
     "Other"
@@ -274,9 +286,14 @@
     "@types/vscode": "~1.95.0",
     "@vscode/test-cli": "^0.0.15",
     "@vscode/test-electron": "^3.1.0",
-    "@vscode/vsce": "^3.6.0",
+    "@vscode/vsce": "^4.1.1",
     "esbuild": "^0.28.0",
     "gemoji": "^8.1.0",
-    "typescript": "^5.8.0"
+    "typescript": "^7.0.0"
+  },
+  "overrides": {
+    "mocha": "^12.0.3",
+    "glob": "^14.0.2",
+    "minimatch": "^11.0.1"
   }
 }
